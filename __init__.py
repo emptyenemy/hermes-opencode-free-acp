@@ -4,6 +4,13 @@ from providers.base import ProviderProfile
 
 from .constants import DEFAULT_MODEL, FREE_MODELS, VERSION, opencode_command
 
+DEFAULT_CONTEXT_WINDOW = 131_072
+CONTEXT_WINDOWS = {
+    # The OpenCode free SKU has a smaller window than the base DeepSeek model.
+    # https://models.opencode.ai/models/deepseek/deepseek-v4.1-flash/
+    "opencode/deepseek-v4.1-flash-free": 200_000,
+}
+
 
 class OpenCodeFreeProfile(ProviderProfile):
     def create_client(self, **client_kwargs):
@@ -26,7 +33,7 @@ class OpenCodeFreeProfile(ProviderProfile):
             client.close()
 
     def get_model_context_length(self, model):
-        return 131072 if model in FREE_MODELS else None
+        return self.model_capabilities.get(model, {}).get("context_window")
 
 
 profile = OpenCodeFreeProfile(
@@ -43,7 +50,7 @@ profile = OpenCodeFreeProfile(
     fallback_models=FREE_MODELS,
     default_aux_model=DEFAULT_MODEL,
     model_capabilities={model: {
-        "context_window": 131072,
+        "context_window": CONTEXT_WINDOWS.get(model, DEFAULT_CONTEXT_WINDOW),
         "supports_tools": True,
         "supports_vision": False,
         "supports_reasoning": False,
